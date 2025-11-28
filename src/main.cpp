@@ -1,0 +1,58 @@
+#include <M5Unified.h>
+#include <SD.h>      
+#include <WiFi.h>
+#include "AppManager.h"
+#include "MenuApp.h"
+#include "SDExplorerApp.h" 
+#include "WorkoutApp.h"
+#include "SettingsApp.h"
+#include "PianoApp.h"
+// #include "TemplateApp.h"
+
+SPIClass sdSPI(FSPI);
+AppManager appManager;
+MenuApp menuApp(&appManager);
+SettingsApp settingsApp(&appManager);
+SDExplorerApp sdExplorerApp(&appManager);
+WorkoutApp workoutApp(&appManager);
+PianoApp pianoApp(&appManager);
+// TemplateApp templateApp(&appManager);
+
+
+
+void setup() {
+    auto cfg = M5.config();
+    M5.begin(cfg);
+    if (M5.Display.isEPD())
+    {
+        M5.Display.setEpdMode(epd_mode_t::epd_fast); // or epd_fastest
+    }
+    // Rotation portrait flipped
+    M5.Lcd.setRotation(2);
+
+    Serial.begin(115200); 
+    //M5.Speaker.tone(20000, 1000);
+    Serial.println("I'm ONNN!");
+
+    sdSPI.begin(39, 40, 38);
+    if (!SD.begin(47, sdSPI)) {
+        M5.Display.println("SD Card Mount Failed");
+        while(1);
+    }
+
+    WiFi.mode(WIFI_AP_STA);
+    appManager.setup();
+
+    appManager.registerApp("Menu", &menuApp);
+    appManager.registerApp("SettingsApp", &settingsApp); 
+    appManager.registerApp("SD_Explorer", &sdExplorerApp); 
+    appManager.registerApp("Workout", &workoutApp);
+    appManager.registerApp("Piano", &pianoApp);
+    //appManager.registerApp("Template", &templateApp);
+    
+    appManager.switchApp("Menu");
+}
+
+void loop() {
+    appManager.update();
+}
