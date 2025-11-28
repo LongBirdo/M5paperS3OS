@@ -1,0 +1,13 @@
+.pio/
+.vscode/
+junk/
+.pioenvs/
+.piolibdeps/
+.cache/
+.clang_complete
+*.o
+*.elf
+*.bin
+*.hex
+*.map
+.DS_Store
