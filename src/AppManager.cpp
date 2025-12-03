@@ -58,6 +58,7 @@ void AppManager::update() {
             M5.Display.setEpdMode(epd_mode_t::epd_quality);
         }
    
+        M5.Display.setRotation(2);
         showScreensaver();
         M5.Display.display();
         delay(1000);
