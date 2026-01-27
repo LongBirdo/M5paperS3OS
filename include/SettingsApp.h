@@ -4,12 +4,14 @@
 #include <vector>
 #include "ui/LabelButton.h"
 #include "ui/Incrementer.h"
+#include "ui/ListSelector.h"
 
 class AppManager;
 
 enum class SettingsState {
     MAIN_SETTINGS,
-    DATE_TIME
+    DATE_TIME,
+    NETWORK
 };
 
 class SettingsApp : public App {
@@ -19,6 +21,7 @@ public:
     void update() override;
     void draw() override;
     void handleTouch(int x, int y) override;
+    bool needsRedraw() override { return _needsRedraw; }
 private:
     AppManager* appManager;
     SettingsState currentState = SettingsState::MAIN_SETTINGS;
@@ -31,9 +34,16 @@ private:
     ui::Incrementer yearInc, monthInc, dateInc, hourInc, minuteInc, secondInc;
     ui::LabelButton saveButton;
 
+    bool _isScanning = false;
+    std::vector<String> scannedNetworksSSID;
+    std::vector<int32_t> scannedNetworksRSSI;
+    ui::ListSelector networkSelector;
+
     void drawMainSettings();
     void drawDateTimeScreen();
+    void drawNetworkScreen();
 
     void handleMainSettingsTouch(int x, int y);
     void handleDateTimeTouch(int x, int y);
+    void handleNetworkTouch(int x, int y);
 };
