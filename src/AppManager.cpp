@@ -24,6 +24,10 @@ void AppManager::update() {
         currentApp->update();
     }
 
+    if (currentApp->needsRedraw()){
+        needsRedraw = true;
+    }
+
     if (M5.Touch.getCount() > 0) {
         lastActivityTime = millis();  // Reset on touch
         if (!touchActive) {

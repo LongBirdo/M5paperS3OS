@@ -6,6 +6,27 @@ namespace ui {
 Keyboard::Keyboard(int x, int y, int w, int h)
     : _x(x), _y(y), _w(w), _h(h) {}
 
+bool Keyboard::drawAndHandleInput(const std::string& placeholder) {
+    // If keyboard is open → take over everything
+    if (_visible) {
+        if (_needsRedraw) {
+            M5.Display.setRotation(1);
+            M5.Display.clear(WHITE);
+            drawTextBox();           // shows current text or placeholder
+            drawKeyboard();
+            _needsRedraw = false;
+        }
+        draw();  // will only redraw if needed
+        return true;  // "I handled drawing and touch"
+    }
+
+    // Keyboard not open → show placeholder text in your app
+    M5.Display.setTextColor(DARKGREY);
+    M5.Display.setFont(&fonts::FreeSansBold12pt7b);
+    M5.Display.drawCentreString(placeholder.c_str(), 480, 400);
+    return false;
+}
+
 void Keyboard::show(Callback onDone) {
     _visible = true;
     _text.clear();

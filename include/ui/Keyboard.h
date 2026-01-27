@@ -9,6 +9,7 @@ namespace ui {
 class Keyboard {
 public:
     using Callback = std::function<void(const std::string&)>;
+    bool drawAndHandleInput(const std::string& placeholder = "Type here...");
 
     Keyboard(int x = 0, int y = 0, int w = 960, int h = 540);
 
