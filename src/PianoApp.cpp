@@ -14,11 +14,6 @@ void PianoApp::setup() {
 }
 
 void PianoApp::draw() {
-    // Let the keyboard draw itself + handle input if it's open
-    if (_keyboard.drawAndHandleInput("Touch to name your song")) {
-        return;  // Keyboard is active → it drew everything, we're done
-    }
-
     // Keyboard is closed → draw normal Piano UI
     M5.Display.clear(WHITE);
 
@@ -41,16 +36,7 @@ void PianoApp::draw() {
 }
 
 void PianoApp::handleTouch(int x, int y) {
-    if (_keyboard.isVisible()) {
-        _keyboard.handleTouch(x, y);
-        return;
-    }
 
-    // Tap anywhere → open keyboard
-    _keyboard.show([this](const std::string& text) {
-        _currentText = text;
-        _needsRedraw = true;
-    });
 }
 
 void PianoApp::update() {

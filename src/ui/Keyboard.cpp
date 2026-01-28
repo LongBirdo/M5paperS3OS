@@ -1,4 +1,3 @@
-// src/ui/Keyboard.cpp
 #include "ui/Keyboard.h"
 
 namespace ui {
@@ -6,30 +5,11 @@ namespace ui {
 Keyboard::Keyboard(int x, int y, int w, int h)
     : _x(x), _y(y), _w(w), _h(h) {}
 
-bool Keyboard::drawAndHandleInput(const std::string& placeholder) {
-    // If keyboard is open → take over everything
-    if (_visible) {
-        if (_needsRedraw) {
-            M5.Display.setRotation(1);
-            M5.Display.clear(WHITE);
-            drawTextBox();           // shows current text or placeholder
-            drawKeyboard();
-            _needsRedraw = false;
-        }
-        draw();  // will only redraw if needed
-        return true;  // "I handled drawing and touch"
-    }
-
-    // Keyboard not open → show placeholder text in your app
-    M5.Display.setTextColor(DARKGREY);
-    M5.Display.setFont(&fonts::FreeSansBold12pt7b);
-    M5.Display.drawCentreString(placeholder.c_str(), 480, 400);
-    return false;
-}
-
-void Keyboard::show(Callback onDone) {
+// Updated show method
+void Keyboard::show(const std::string& placeholder, Callback onDone) {
     _visible = true;
     _text.clear();
+    _placeholder = placeholder; // Save the passed string or the default "Type here..."
     _onDone = std::move(onDone);
     _shift = false;
     _capsLock = false;
@@ -43,7 +23,7 @@ void Keyboard::show(Callback onDone) {
 
 void Keyboard::hide() {
     _visible = false;
-    M5.Display.setRotation(2);
+    M5.Display.setRotation(2); // Return to portrait for the app
     if (_onDone) _onDone(_text);
 }
 
@@ -66,11 +46,20 @@ void Keyboard::updateTextBox() {
 void Keyboard::drawTextBox() {
     M5.Display.fillRect(0, 0, 960, 140, WHITE);
     M5.Display.drawRect(0, 0, 960, 140, BLACK);
-    M5.Display.setTextColor(BLACK);
+    
     M5.Display.setFont(&fonts::FreeSansBold18pt7b);
     M5.Display.setTextWrap(true);
     M5.Display.setCursor(30, 50);
-    M5.Display.print(_text.empty() ? "Type here..." : _text.c_str());
+
+    if (_text.empty()) {
+        // Draw the placeholder in grey if no text has been typed yet
+        M5.Display.setTextColor(DARKGREY);
+        M5.Display.print(_placeholder.c_str());
+    } else {
+        // Draw actual typed text in black
+        M5.Display.setTextColor(BLACK);
+        M5.Display.print(_text.c_str());
+    }
 }
 
 void Keyboard::drawKeyboard() {
@@ -78,7 +67,7 @@ void Keyboard::drawKeyboard() {
     const int keyW = 88;
     const int gap  = 5;
     int y = 160;
-    int leftx = 20; //was 30
+    int leftx = 20;
 
     const auto& rows = _numbersMode ? _numberRows : _letterRows;
 
@@ -101,7 +90,6 @@ void Keyboard::drawKeyboard() {
 
     // Row 3 — Shift + letters + Enter
     y += keyH + gap;
-
     drawKey(leftx, y, keyW + 10, keyH, "Shift", (_shift || _capsLock) ? WHITE : DARKGREY);
 
     int letterX = leftx + keyW + gap;
@@ -111,15 +99,11 @@ void Keyboard::drawKeyboard() {
         if (!_numbersMode && (_capsLock || _shift)) label.toUpperCase();
         drawKey(x, y, keyW, keyH, label);
     }
-
     drawKey(830, y, keyW + leftx, keyH, "Enter", RED);
 
-    // Bottom row — 123/ABC (left), Space (center), Del (right)
+    // Bottom row — 123/ABC, Space, Del
     y += keyH + gap;
-
-    drawKey(leftx, y, keyW * 1.8, keyH, _numbersMode ? "ABC" : "123",
-            _numbersMode ? WHITE : DARKGREY);
-
+    drawKey(leftx, y, keyW * 1.8, keyH, _numbersMode ? "ABC" : "123", _numbersMode ? WHITE : DARKGREY);
     drawKey(200, y, 560, keyH, "Space", DARKGREY);
     drawKey(780, y, 150, keyH, "Del", RED);
 }
@@ -134,37 +118,29 @@ void Keyboard::drawKey(int x, int y, int w, int h, const String& label, uint16_t
 
 void Keyboard::handleTouch(int x, int y) {
     if (!_visible || y < 160) return;
-
-    const int keyH = 90;
-    const int keyW = 88;
-    const int gap  = 5;
-    const int rowHeight = keyH + gap;
-    int leftx = 20; //was 30
-
-    int row = (y - 160) / rowHeight;
-
+    const int keyH = 90; 
+    const int keyW = 88; 
+    const int gap = 5;
+    int row = (y - 160) / (keyH + gap);
     const auto& rows = _numbersMode ? _numberRows : _letterRows;
 
     if (row == 0) {
-        int col = (x - leftx) / (keyW + gap);
+        int col = (x - 20) / (keyW + gap);
         if (col >= 0 && col < 10) appendChar(rows[0][col]);
-    }
-    else if (row == 1) {
-        int col = (x - leftx - keyW/2) / (keyW + gap);
+    } else if (row == 1) {
+        int col = (x - 20 - keyW/2) / (keyW + gap);
         if (col >= 0 && col < (int)rows[1].length()) appendChar(rows[1][col]);
-    }
-    else if (row == 2) {
-        if (x < 120) toggleShift();           // Shift
-        else if (x > 830) enter();            // Enter
+    } else if (row == 2) {
+        if (x < 120) toggleShift();
+        else if (x > 830) enter();
         else {
-            int col = (x - (leftx + keyW + gap)) / (keyW + gap);
+            int col = (x - (20 + keyW + gap)) / (keyW + gap);
             if (col >= 0 && col < (int)rows[2].length()) appendChar(rows[2][col]);
         }
-    }
-    else if (row >= 3) {
-        if (x < 200) toggleMode();            // 123/ABC toggle — bottom-left
-        else if (x > 750) backspace();        // Del
-        else if (x > 180 && x < 760) appendChar(' '); // Space
+    } else if (row >= 3) {
+        if (x < 200) toggleMode();
+        else if (x > 750) backspace();
+        else if (x > 180 && x < 760) appendChar(' ');
     }
 }
 
@@ -182,14 +158,10 @@ void Keyboard::backspace() {
     updateTextBox();
 }
 
-void Keyboard::enter() {
-    hide();
-}
+void Keyboard::enter() { hide(); }
 
 void Keyboard::toggleShift() {
     _shift = !_shift;
-    // double-tap = caps lock
-    //if (_shift) _capsLock = !_capsLock;  DOESNT WORK
     _needsRedraw = true;
     draw();
 }
@@ -201,4 +173,4 @@ void Keyboard::toggleMode() {
     draw();
 }
 
-}
+} // namespace ui

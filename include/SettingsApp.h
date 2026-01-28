@@ -5,6 +5,7 @@
 #include "ui/LabelButton.h"
 #include "ui/Incrementer.h"
 #include "ui/ListSelector.h"
+#include "ui/Keyboard.h" 
 
 class AppManager;
 
@@ -21,7 +22,7 @@ public:
     void update() override;
     void draw() override;
     void handleTouch(int x, int y) override;
-    bool needsRedraw() override { return _needsRedraw; }
+    bool needsRedraw() override;
 private:
     AppManager* appManager;
     SettingsState currentState = SettingsState::MAIN_SETTINGS;
@@ -35,9 +36,13 @@ private:
     ui::LabelButton saveButton;
 
     bool _isScanning = false;
+    String _pendingSSID = "";
     std::vector<String> scannedNetworksSSID;
     std::vector<int32_t> scannedNetworksRSSI;
     ui::ListSelector networkSelector;
+    ui::Keyboard _keyboard{0, 0, 960, 540}; 
+
+    void saveNetwork(String ssid, String password);
 
     void drawMainSettings();
     void drawDateTimeScreen();
