@@ -11,3 +11,4 @@ junk/
 *.hex
 *.map
 .DS_Store
+secrets.ini
